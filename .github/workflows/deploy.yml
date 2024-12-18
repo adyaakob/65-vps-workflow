@@ -16,17 +16,27 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
     
+    - name: Debug Repository Contents
+      run: |
+        echo "Repository Contents:"
+        pwd
+        ls -R
+    
     - name: Setup SSH
       env:
         SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
         SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
       run: |
+        set -x  # Enable verbose output
         mkdir -p ~/.ssh
         echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
         
+        # Validate SSH key
+        ssh-keygen -l -f ~/.ssh/id_ed25519 || echo "SSH Key Validation Failed"
+        
         # Add passphrase to SSH key
-        echo "$SSH_PASSPHRASE" | ssh-keygen -p -f ~/.ssh/id_ed25519 -N ""
+        echo "$SSH_PASSPHRASE" | ssh-keygen -p -f ~/.ssh/id_ed25519 -N "" || echo "Passphrase Addition Failed"
         
         # Generate public key
         ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
@@ -37,55 +47,72 @@ jobs:
         
         # Start SSH agent and add key
         eval $(ssh-agent -s)
-        echo "$SSH_PASSPHRASE" | ssh-add -k ~/.ssh/id_ed25519
+        echo "$SSH_PASSPHRASE" | ssh-add -k ~/.ssh/id_ed25519 || echo "SSH Key Add Failed"
         
         # Verify SSH key
         ssh-add -l
     
     - name: Comprehensive SSH Debugging
       run: |
+        set -x
         echo "SSH Connection Debugging..."
         
         # Check SSH configuration
         ssh -V
         
-        # Verbose connection test with extended debugging
+        # Test SSH connection with verbose output
         ssh -vvvv -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o PreferredAuthentications=publickey \
-            root@167.235.75.153 "echo 'Detailed SSH Connection Test'"
+            root@167.235.75.153 "echo 'Detailed SSH Connection Test'" || echo "SSH Connection Test Failed"
       continue-on-error: true
     
     - name: Deploy to VPS
       run: |
+        set -x
         echo "Starting Deployment Process..."
+        
+        # Verify source files exist
+        echo "Source Files:"
+        ls -l src/
         
         # Create deployment directory
         ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o PreferredAuthentications=publickey \
-            root@167.235.75.153 "mkdir -p /var/www/html/dahalan.org/testworkflow/"
+            root@167.235.75.153 "mkdir -p /var/www/html/dahalan.org/testworkflow/" || echo "Directory Creation Failed"
         
-        # Copy files to VPS
-        scp -o StrictHostKeyChecking=no \
+        # Copy files to VPS with verbose output
+        scp -v -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o PreferredAuthentications=publickey \
-            -r src/* root@167.235.75.153:/var/www/html/dahalan.org/testworkflow/
+            -r src/* root@167.235.75.153:/var/www/html/dahalan.org/testworkflow/ || echo "SCP File Transfer Failed"
         
         echo "Deployment files transferred successfully"
       
     - name: Verify Deployment
       run: |
+        set -x
         echo "Verifying deployment..."
         
-        # Use curl with more detailed output and follow redirects
-        response=$(curl -sL -w "%{http_code}" https://dahalan.org/testworkflow/index.html)
+        # Extensive debugging for deployment verification
+        echo "Attempting to verify deployment..."
         
-        # Print full curl output for debugging
-        echo "Full curl response:"
-        curl -v https://dahalan.org/testworkflow/index.html
+        # Check if website is accessible
+        response=$(curl -sL -w "%{http_code}" https://dahalan.org/testworkflow/index.html || echo "Curl Failed")
+        echo "Curl Response Code: $response"
         
-        # Check if response is a successful status code (200 or 301/302 for redirects)
+        # Print full curl verbose output
+        echo "Verbose Curl Output:"
+        curl -vv https://dahalan.org/testworkflow/index.html
+        
+        # Perform SSH check of deployed files
+        ssh -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o PreferredAuthentications=publickey \
+            root@167.235.75.153 "ls -l /var/www/html/dahalan.org/testworkflow/" || echo "SSH File Listing Failed"
+        
+        # Check if response is a successful status code
         if [[ "$response" =~ ^(200|301|302)$ ]]; then
           echo "Deployment successful! Website is accessible."
           exit 0
