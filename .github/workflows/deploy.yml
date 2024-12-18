@@ -98,13 +98,9 @@ jobs:
         # Extensive debugging for deployment verification
         echo "Attempting to verify deployment..."
         
-        # Check if website is accessible
-        response=$(curl -sL -w "%{http_code}" https://dahalan.org/testworkflow/index.html || echo "Curl Failed")
+        # Check if website is accessible with follow redirects
+        response=$(curl -sL -w "%{http_code}" https://dahalan.org/testworkflow/index.html)
         echo "Curl Response Code: $response"
-        
-        # Print full curl verbose output
-        echo "Verbose Curl Output:"
-        curl -vv https://dahalan.org/testworkflow/index.html
         
         # Perform SSH check of deployed files
         ssh -o StrictHostKeyChecking=no \
@@ -114,8 +110,19 @@ jobs:
         
         # Check if response is a successful status code
         if [[ "$response" =~ ^(200|301|302)$ ]]; then
-          echo "Deployment successful! Website is accessible."
-          exit 0
+          # Fetch the final URL after redirects
+          final_url=$(curl -sL -w "%{url_effective}" https://dahalan.org/testworkflow/index.html)
+          echo "Final URL after redirects: $final_url"
+          
+          # Verify content of the final URL
+          content=$(curl -sL "$final_url")
+          if [[ -n "$content" ]]; then
+            echo "Deployment successful! Website is accessible."
+            exit 0
+          else
+            echo "Deployment failed: Empty content from final URL"
+            exit 1
+          fi
         else
           echo "Deployment verification failed. HTTP status: $response"
           exit 1
