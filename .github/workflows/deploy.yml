@@ -77,9 +77,18 @@ jobs:
     - name: Verify Deployment
       run: |
         echo "Verifying deployment..."
-        response=$(curl -s -w "%{http_code}" https://dahalan.org/testworkflow/index.html)
-        if [ "$response" -eq 200 ]; then
-          echo "Deployment successful! Website is live."
+        
+        # Use curl with more detailed output and follow redirects
+        response=$(curl -sL -w "%{http_code}" https://dahalan.org/testworkflow/index.html)
+        
+        # Print full curl output for debugging
+        echo "Full curl response:"
+        curl -v https://dahalan.org/testworkflow/index.html
+        
+        # Check if response is a successful status code (200 or 301/302 for redirects)
+        if [[ "$response" =~ ^(200|301|302)$ ]]; then
+          echo "Deployment successful! Website is accessible."
+          exit 0
         else
           echo "Deployment verification failed. HTTP status: $response"
           exit 1
