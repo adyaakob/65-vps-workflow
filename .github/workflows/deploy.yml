@@ -24,11 +24,20 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan -H 167.235.75.153 >> ~/.ssh/known_hosts
     
+    - name: Debug SSH Configuration
+      run: |
+        echo "Debugging SSH connection..."
+        ssh-add -l
+        cat ~/.ssh/config || echo "No SSH config found"
+        echo "Attempting to connect with verbose output:"
+        ssh -vvv -o StrictHostKeyChecking=no root@167.235.75.153 "echo 'SSH connection test'"
+      continue-on-error: true
+    
     - name: Deploy to VPS
       run: |
         echo "Attempting deployment..."
-        ssh -o StrictHostKeyChecking=no root@167.235.75.153 "mkdir -p /var/www/html/dahalan.org/testworkflow/"
-        scp -o StrictHostKeyChecking=no -r src/* root@167.235.75.153:/var/www/html/dahalan.org/testworkflow/
+        ssh -vvv -o StrictHostKeyChecking=no root@167.235.75.153 "mkdir -p /var/www/html/dahalan.org/testworkflow/"
+        scp -vvv -o StrictHostKeyChecking=no -r src/* root@167.235.75.153:/var/www/html/dahalan.org/testworkflow/
         echo "Deployment files transferred successfully"
       
     - name: Verify Deployment
