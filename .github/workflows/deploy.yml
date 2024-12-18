@@ -18,12 +18,6 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
     
-    - name: Debug SSH Connection
-      run: |
-        echo "Debugging SSH connection..."
-        ssh -vv -o StrictHostKeyChecking=no root@167.235.75.153 "echo 'SSH connection successful'"
-      continue-on-error: true
-    
     - name: Prepare Deployment
       run: |
         echo "Starting deployment to VPS"
