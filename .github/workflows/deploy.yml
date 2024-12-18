@@ -43,6 +43,7 @@ jobs:
         # Verbose connection test with extended debugging
         ssh -vvvv -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o PreferredAuthentications=publickey \
             root@167.235.75.153 "echo 'Detailed SSH Connection Test'"
       continue-on-error: true
     
@@ -53,11 +54,13 @@ jobs:
         # Create deployment directory
         ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o PreferredAuthentications=publickey \
             root@167.235.75.153 "mkdir -p /var/www/html/dahalan.org/testworkflow/"
         
         # Copy files to VPS
         scp -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o PreferredAuthentications=publickey \
             -r src/* root@167.235.75.153:/var/www/html/dahalan.org/testworkflow/
         
         echo "Deployment files transferred successfully"
