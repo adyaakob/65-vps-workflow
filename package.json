@@ -1,0 +1,33 @@
+{
+  "name": "vps-workflow-validation",
+  "version": "1.0.0",
+  "description": "Demonstration of GitHub to Dokploy VPS deployment workflow",
+  "main": "src/index.html",
+  "scripts": {
+    "start": "npx http-server src",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "npx eslint src/**/*.js",
+    "format": "npx prettier --write src/**/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adyaakob/65-vps-workflow.git"
+  },
+  "keywords": [
+    "deployment",
+    "workflow",
+    "vps",
+    "github-actions",
+    "dokploy"
+  ],
+  "author": "Andy Akob",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "http-server": "^14.1.1",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

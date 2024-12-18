@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPS Workflow Validation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 VPS Workflow Test</h1>
+        <p class="success-message">✅ Successful deployment from GitHub to Dokploy VPS!</p>
+        
+        <div class="workflow-visualization">
+            <div class="workflow-step">
+                <div class="step-icon">📦</div>
+                <div class="step-label">GitHub</div>
+            </div>
+            <div class="workflow-arrow">➡️</div>
+            <div class="workflow-step">
+                <div class="step-icon">⚙️</div>
+                <div class="step-label">Actions</div>
+            </div>
+            <div class="workflow-arrow">➡️</div>
+            <div class="workflow-step">
+                <div class="step-icon">🚀</div>
+                <div class="step-label">Dokploy</div>
+            </div>
+            <div class="workflow-arrow">➡️</div>
+            <div class="workflow-step">
+                <div class="step-icon">🌐</div>
+                <div class="step-label">Live</div>
+            </div>
+        </div>
+
+        <div class="details">
+            <h2>🔍 Deployment Details</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h3>🌐 Domain</h3>
+                    <p>dahalan.org/testworkflow/</p>
+                </div>
+                <div class="info-item">
+                    <h3>🖥️ Server IP</h3>
+                    <p>167.235.75.153</p>
+                </div>
+                <div class="info-item">
+                    <h3>📅 Date</h3>
+                    <p id="current-date"></p>
+                </div>
+                <div class="info-item">
+                    <h3>⏰ Time</h3>
+                    <p id="current-time"></p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🔄 Last Updated: <span id="last-updated"></span></p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
