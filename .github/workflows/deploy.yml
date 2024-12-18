@@ -90,6 +90,59 @@ jobs:
         
         echo "Deployment files transferred successfully"
       
+    - name: Configure Web Server
+      run: |
+        set -x
+        echo "Configuring Web Server..."
+        
+        # SSH into VPS and perform server configuration
+        ssh -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o PreferredAuthentications=publickey \
+            root@167.235.75.153 << 'EOF'
+        
+        # Check Nginx configuration
+        echo "Nginx Configuration Check:"
+        nginx -T | grep -E "server_name|root|location"
+        
+        # Verify Nginx configuration
+        nginx -t
+        
+        # Check Nginx error logs
+        echo "Nginx Error Logs:"
+        tail -n 50 /var/log/nginx/error.log
+        
+        # Check Nginx access logs
+        echo "Nginx Access Logs:"
+        tail -n 50 /var/log/nginx/access.log
+        
+        # Create or update Nginx configuration for the deployment
+        cat > /etc/nginx/sites-available/dahalan.org << INNEREOF
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name dahalan.org www.dahalan.org;
+    
+    ssl_certificate /etc/letsencrypt/live/dahalan.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dahalan.org/privkey.pem;
+    
+    root /var/www/html/dahalan.org/testworkflow;
+    index index.html;
+    
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+INNEREOF
+        
+        # Enable the site configuration
+        ln -sf /etc/nginx/sites-available/dahalan.org /etc/nginx/sites-enabled/
+        
+        # Test and reload Nginx
+        nginx -t
+        systemctl reload nginx
+EOF
+      
     - name: Verify Deployment
       run: |
         set -x
@@ -98,32 +151,39 @@ jobs:
         # Extensive debugging for deployment verification
         echo "Attempting to verify deployment..."
         
-        # Check if website is accessible with follow redirects
-        response=$(curl -sL -w "%{http_code}" https://dahalan.org/testworkflow/index.html)
-        echo "Curl Response Code: $response"
-        
-        # Perform SSH check of deployed files
+        # Perform comprehensive connectivity and content checks
         ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o PreferredAuthentications=publickey \
-            root@167.235.75.153 "ls -l /var/www/html/dahalan.org/testworkflow/" || echo "SSH File Listing Failed"
+            root@167.235.75.153 << 'EOF'
         
-        # Check if response is a successful status code
-        if [[ "$response" =~ ^(200|301|302)$ ]]; then
-          # Fetch the final URL after redirects
-          final_url=$(curl -sL -w "%{url_effective}" https://dahalan.org/testworkflow/index.html)
-          echo "Final URL after redirects: $final_url"
-          
-          # Verify content of the final URL
-          content=$(curl -sL "$final_url")
-          if [[ -n "$content" ]]; then
-            echo "Deployment successful! Website is accessible."
-            exit 0
-          else
-            echo "Deployment failed: Empty content from final URL"
-            exit 1
-          fi
+        # Check file permissions
+        echo "File Permissions:"
+        ls -l /var/www/html/dahalan.org/testworkflow/
+        
+        # Verify web server process
+        echo "Web Server Process:"
+        systemctl status nginx
+        
+        # Check listening ports
+        echo "Listening Ports:"
+        ss -tuln | grep -E ':80|:443'
+EOF
+        
+        # Check website accessibility
+        response=$(curl -sL -w "%{http_code}" https://dahalan.org/testworkflow/index.html)
+        echo "Curl Response Code: $response"
+        
+        # Fetch the final URL after redirects
+        final_url=$(curl -sL -w "%{url_effective}" https://dahalan.org/testworkflow/index.html)
+        echo "Final URL after redirects: $final_url"
+        
+        # Verify content of the final URL
+        content=$(curl -sL "$final_url")
+        if [[ -n "$content" ]]; then
+          echo "Deployment successful! Website is accessible."
+          exit 0
         else
-          echo "Deployment verification failed. HTTP status: $response"
+          echo "Deployment failed: Empty content from final URL"
           exit 1
         fi
