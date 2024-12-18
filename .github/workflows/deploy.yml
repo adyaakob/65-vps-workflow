@@ -18,6 +18,12 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
     
+    - name: Debug SSH Connection
+      run: |
+        echo "Debugging SSH connection..."
+        ssh -vv -o StrictHostKeyChecking=no root@167.235.75.153 "echo 'SSH connection successful'"
+      continue-on-error: true
+    
     - name: Prepare Deployment
       run: |
         echo "Starting deployment to VPS"
@@ -26,8 +32,9 @@ jobs:
     
     - name: Deploy to VPS
       run: |
-        echo "Copying files to VPS"
-        scp -r src/* root@167.235.75.153:/var/www/html/dahalan.org/testworkflow/
+        echo "Attempting deployment..."
+        ssh -o StrictHostKeyChecking=no root@167.235.75.153 "mkdir -p /var/www/html/dahalan.org/testworkflow/"
+        scp -o StrictHostKeyChecking=no -r src/* root@167.235.75.153:/var/www/html/dahalan.org/testworkflow/
         echo "Deployment files transferred successfully"
       
     - name: Verify Deployment
